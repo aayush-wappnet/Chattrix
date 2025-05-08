@@ -24,8 +24,8 @@ export class User {
   @Column({ default: false })
   isOnline: boolean;
 
-  @Column({ nullable: true })
-  lastSeen: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  lastSeen: Date | null;
 
   @OneToMany(() => ChannelMember, (channelMember) => channelMember.user)
   channelMembers: ChannelMember[];
