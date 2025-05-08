@@ -4,6 +4,9 @@ import { Socket } from 'socket.io';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { ChannelsService } from '../channels/channels.service';
+import { UserResponseDto } from '../users/dto/user-response.dto';
+import { plainToClass } from 'class-transformer';
 
 @Injectable()
 export class WebsocketService {
@@ -14,9 +17,10 @@ export class WebsocketService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly channelsService: ChannelsService,
   ) {}
 
-  async authenticateClient(client: Socket): Promise<any> {
+  async authenticateClient(client: Socket): Promise<UserResponseDto> {
     this.logger.debug(`Authenticating client: ${client.id}`);
     let token = client.handshake.auth.token?.replace('Bearer ', '');
     if (!token) {
@@ -53,13 +57,13 @@ export class WebsocketService {
     }
   }
 
-  async handleConnection(client: Socket, user: any) {
+  async handleConnection(client: Socket, user: UserResponseDto) {
     this.userSocketMap.set(user.id, client.id);
     await this.usersService.updatePresence(user.id, true);
     this.logger.log(`User ${user.email} connected with socket ID: ${client.id}`);
   }
 
-  async handleDisconnect(client: Socket): Promise<any> {
+  async handleDisconnect(client: Socket): Promise<UserResponseDto | null> {
     const userId = client.data.userId;
     if (!userId) {
       this.logger.warn('Disconnect attempt with no userId');
@@ -75,15 +79,20 @@ export class WebsocketService {
     return null;
   }
 
-  async getActiveUsers(channelId: number): Promise<any[]> {
-    const activeUsers: any[] = [];
+  async getActiveUsers(channelId: number): Promise<UserResponseDto[]> {
+    const channel = await this.channelsService.findOne(channelId);
+    if (!channel) {
+      this.logger.warn(`Channel not found: ${channelId}`);
+      return [];
+    }
+    const activeUsers: UserResponseDto[] = [];
     for (const [userId, socketId] of this.userSocketMap.entries()) {
       const user = await this.usersService.findOne(userId);
-      if (user) {
-        activeUsers.push({ id: user.id, email: user.email, username: user.username });
+      if (user && channel.members.some((member) => member.user.id === userId)) {
+        activeUsers.push(plainToClass(UserResponseDto, user));
       }
     }
     this.logger.debug(`Active users for channel ${channelId}: ${JSON.stringify(activeUsers)}`);
-    return activeUsers; // Simplified; will be filtered by channel in Channels module
+    return activeUsers;
   }
 }

@@ -1,4 +1,4 @@
-// src/users/repository/user.repository.ts
+// src/users/user.repository.ts
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,11 +16,15 @@ export class UserRepository extends Repository<User> {
     return this.repository.save(user);
   }
 
-  async findById(id: number): Promise<User | null> {
-    return this.repository.findOne({ where: { id } });
+  async findById(id: number, relations: string[] = []): Promise<User | null> {
+    return this.repository.findOne({
+      where: { id },
+      select: ['id', 'email', 'username', 'role', 'isOnline', 'lastSeen'],
+      relations,
+    });
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.repository.findOne({ where: { email } });
+    return this.repository.findOne({ where: { email } }); // Includes password for auth
   }
 }

@@ -3,15 +3,17 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from '../users/users.module';
+import { AuthModule } from '../auth/auth.module';
+import { ChannelsModule } from '../channels/channels.module';
 import { WebsocketGateway } from './websocket.gateway';
 import { WebsocketService } from './websocket.service';
-import { AuthModule } from '../auth/auth.module';
 import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     UsersModule,
     AuthModule,
+    ChannelsModule,
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
