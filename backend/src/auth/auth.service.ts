@@ -1,4 +1,3 @@
-// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -17,7 +16,7 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const { email, username, password, role } = registerDto;
-    const existingUser = await this.usersService.findByEmail(email);
+    const existingUser = await this.usersService.findByEmail(email).catch(() => null);
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }

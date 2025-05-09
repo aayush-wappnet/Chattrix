@@ -18,7 +18,7 @@ export class ChannelsRepository {
     private readonly channelMemberRepository: Repository<ChannelMember>,
   ) {}
 
-  async createChannel(createChannelDto: CreateChannelDto, user: User): Promise<Channel> {
+  async createChannel(createChannelDto: CreateChannelDto, user: User, recipient?: User): Promise<Channel> {
     const channel = this.channelRepository.create({
       ...createChannelDto,
       type: createChannelDto.type || ChannelType.Public,
@@ -29,7 +29,26 @@ export class ChannelsRepository {
       channel: savedChannel,
     });
     await this.channelMemberRepository.save(channelMember);
+    if (recipient) {
+      const recipientMember = this.channelMemberRepository.create({
+        user: recipient,
+        channel: savedChannel,
+      });
+      await this.channelMemberRepository.save(recipientMember);
+    }
     return this.findOne(savedChannel.id);
+  }
+
+  async findPrivateChannelForUsers(userId1: number, userId2: number): Promise<Channel | null> {
+    return this.channelRepository
+      .createQueryBuilder('channel')
+      .innerJoin('channel.members', 'member1')
+      .innerJoin('channel.members', 'member2')
+      .where('channel.type = :type', { type: ChannelType.Private })
+      .andWhere('member1.userId = :userId1', { userId1 })
+      .andWhere('member2.userId = :userId2', { userId2 })
+      .andWhere('member1.id != member2.id')
+      .getOne();
   }
 
   async findAll(): Promise<Channel[]> {

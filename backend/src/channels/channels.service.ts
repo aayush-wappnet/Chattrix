@@ -20,7 +20,22 @@ export class ChannelsService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    return this.channelsRepository.createChannel(createChannelDto, user as any); // Cast due to DTO
+    if (createChannelDto.type === ChannelType.Private && createChannelDto.recipientId) {
+      const recipient = await this.usersService.findOne(createChannelDto.recipientId, [
+        'channelMembers',
+        'messages',
+        'notifications',
+      ]);
+      if (!recipient) {
+        throw new NotFoundException('Recipient not found');
+      }
+      const existingChannel = await this.channelsRepository.findPrivateChannelForUsers(user.id, recipient.id);
+      if (existingChannel) {
+        return existingChannel;
+      }
+      return this.channelsRepository.createChannel(createChannelDto, user as any, recipient as any);
+    }
+    return this.channelsRepository.createChannel(createChannelDto, user as any);
   }
 
   async findAll(): Promise<Channel[]> {
@@ -56,7 +71,7 @@ export class ChannelsService {
     if (channel.type === ChannelType.Private) {
       throw new UnauthorizedException('Cannot join private channel without invitation');
     }
-    return this.channelsRepository.addMember(joinChannelDto.channelId, user as any); // Cast due to DTO
+    return this.channelsRepository.addMember(joinChannelDto.channelId, user as any);
   }
 
   async leaveChannel(channelId: number, userId: number): Promise<Channel> {

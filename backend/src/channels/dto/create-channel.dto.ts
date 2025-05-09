@@ -1,5 +1,5 @@
 // src/channels/dto/create-channel.dto.ts
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsNumber } from 'class-validator';
 import { ChannelType } from '../../common/enums/channel-type.enum';
 
 export class CreateChannelDto {
@@ -13,4 +13,8 @@ export class CreateChannelDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsNumber()
+  @IsOptional()
+  recipientId?: number; // For one-to-one private channels
 }

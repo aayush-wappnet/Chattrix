@@ -56,5 +56,7 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /test-socket.js
+/test-socket1.js
+/test-socket-user2.js
 
 
